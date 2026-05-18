@@ -64,6 +64,11 @@ export function RoutineItemCard({ item, onToggle }: RoutineItemProps) {
         >
           {item.title}
         </p>
+        {item.description && (
+          <p className="truncate text-[11px] text-muted-foreground/60">
+            {item.description}
+          </p>
+        )}
         <div className="mt-0.5 flex items-center gap-2">
           <span className="flex items-center gap-1 text-[11px] text-muted-foreground/70">
             <Clock className="h-2.5 w-2.5" />

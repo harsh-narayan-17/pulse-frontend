@@ -3,6 +3,7 @@ export type Recurrence = 'daily' | 'weekdays' | 'weekly' | 'custom';
 export interface RoutineItem {
   id: string;
   title: string;
+  description?: string;
   time: string;
   recurrence: Recurrence;
   completed: boolean;
@@ -15,6 +16,7 @@ export type Bucket = 'today' | 'tomorrow' | 'someday';
 export interface Task {
   id: string;
   title: string;
+  description?: string;
   bucket: Bucket;
   priority: Priority;
   time?: string;

@@ -24,6 +24,7 @@ const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 export function AddRoutineModal({ open, onClose, onAdd }: AddRoutineModalProps) {
   const [mounted, setMounted] = useState(false);
   const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
   const [time, setTime] = useState('08:00');
   const [recurrence, setRecurrence] = useState<Recurrence>('daily');
   const [customDays, setCustomDays] = useState<number[]>([1, 2, 3, 4, 5]);
@@ -48,11 +49,13 @@ export function AddRoutineModal({ open, onClose, onAdd }: AddRoutineModalProps) 
     if (!title.trim()) return;
     onAdd({
       title: title.trim(),
+      description: description.trim(),
       time: formatTime(time),
       recurrence,
       days: recurrence === 'custom' ? customDays : undefined,
     });
     setTitle('');
+    setDescription('');
     setTime('08:00');
     setRecurrence('daily');
     setCustomDays([1, 2, 3, 4, 5]);
@@ -105,6 +108,20 @@ export function AddRoutineModal({ open, onClose, onAdd }: AddRoutineModalProps) 
                   value={title}
                   onChange={e => setTitle(e.target.value)}
                   className="w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none transition-colors focus:border-foreground/30 focus:ring-0"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                  Description
+                  <span className="ml-1 font-normal text-muted-foreground/50">(optional)</span>
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="Add a note…"
+                  value={description}
+                  onChange={e => setDescription(e.target.value)}
+                  className="w-full resize-none rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none transition-colors focus:border-foreground/30"
                 />
               </div>
 

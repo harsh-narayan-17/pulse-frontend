@@ -29,6 +29,7 @@ function mapApiRoutine(r: any): RoutineItem {
   return {
     id: r._id,
     title: r.title,
+    description: r.description || '',
     time: r.time ? toAmPm(r.time) : '',
     recurrence: (r.recurrenceType === 'custom_days' ? 'custom' : r.recurrenceType) as Recurrence,
     completed: r.completedToday ?? r.completed ?? false,
@@ -41,6 +42,7 @@ function mapApiRoutine(r: any): RoutineItem {
 function mapRoutineToApi(r: Omit<RoutineItem, 'id' | 'completed'>) {
   return {
     title: r.title,
+    description: r.description || '',
     time: r.time ? toHHMM(r.time) : undefined,
     recurrenceType: r.recurrence === 'custom' ? 'custom_days' : r.recurrence,
     selectedDays: r.days?.map(i => DAY_NAMES[i]).filter(Boolean) ?? [],

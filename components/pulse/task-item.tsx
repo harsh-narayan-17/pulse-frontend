@@ -77,6 +77,11 @@ export function TaskItemCard({ task, onToggle }: TaskItemProps) {
         >
           {task.title}
         </p>
+        {task.description && (
+          <p className="mt-0.5 truncate text-[11px] text-muted-foreground/60">
+            {task.description}
+          </p>
+        )}
       </div>
 
       {/* Time */}

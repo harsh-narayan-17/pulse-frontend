@@ -6,6 +6,7 @@ function mapApiTask(t: any): Task {
   return {
     id: t._id,
     title: t.title,
+    description: t.description || '',
     bucket: t.bucket as Bucket,
     priority: 'medium', // backend doesn't store priority; default for display
     completed: t.completed,
@@ -21,6 +22,7 @@ export const taskService = {
   create: async (task: Omit<Task, 'id' | 'completed'>): Promise<Task> => {
     const data = await api.post<{ task: unknown }>('/api/tasks', {
       title: task.title,
+      description: task.description || '',
       bucket: task.bucket,
     });
     return mapApiTask(data.task);

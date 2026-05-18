@@ -21,6 +21,7 @@ const BUCKETS: { value: Bucket; label: string }[] = [
 export function TaskPanel({ tasks, onToggle, onAdd }: TaskPanelProps) {
   const [activeBucket, setActiveBucket] = useState<Bucket>('today');
   const [inputValue, setInputValue] = useState('');
+  const [descValue, setDescValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
   const filtered = tasks.filter(t => t.bucket === activeBucket);
@@ -31,8 +32,9 @@ export function TaskPanel({ tasks, onToggle, onAdd }: TaskPanelProps) {
     e.preventDefault();
     const title = inputValue.trim();
     if (!title) return;
-    onAdd({ title, bucket: activeBucket, priority: 'medium' });
+    onAdd({ title, description: descValue.trim(), bucket: activeBucket, priority: 'medium' });
     setInputValue('');
+    setDescValue('');
     inputRef.current?.focus();
   };
 
@@ -82,30 +84,58 @@ export function TaskPanel({ tasks, onToggle, onAdd }: TaskPanelProps) {
 
       {/* Quick-add input */}
       <form onSubmit={handleAdd} className="mb-3">
-        <div className="flex items-center gap-2 rounded-xl border border-border bg-background px-3.5 py-2.5 transition-colors focus-within:border-foreground/30">
-          <Plus className="h-4 w-4 shrink-0 text-muted-foreground/50" />
-          <input
-            ref={inputRef}
-            type="text"
-            placeholder="Add a task…"
-            value={inputValue}
-            onChange={e => setInputValue(e.target.value)}
-            onKeyDown={e => {
-              if (e.key === 'Enter') handleAdd(e);
-              if (e.key === 'Escape') setInputValue('');
-            }}
-            className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/50 outline-none"
-          />
-          {inputValue && (
-            <motion.button
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              type="submit"
-              className="rounded-md bg-foreground px-2 py-0.5 text-[10px] font-medium text-background"
-            >
-              Add
-            </motion.button>
-          )}
+        <div className="rounded-xl border border-border bg-background transition-colors focus-within:border-foreground/30">
+          <div className="flex items-center gap-2 px-3.5 py-2.5">
+            <Plus className="h-4 w-4 shrink-0 text-muted-foreground/50" />
+            <input
+              ref={inputRef}
+              type="text"
+              placeholder="Add a task…"
+              value={inputValue}
+              onChange={e => setInputValue(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') handleAdd(e);
+                if (e.key === 'Escape') { setInputValue(''); setDescValue(''); }
+              }}
+              className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/50 outline-none"
+            />
+            {inputValue && (
+              <motion.button
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                type="submit"
+                className="rounded-md bg-foreground px-2 py-0.5 text-[10px] font-medium text-background"
+              >
+                Add
+              </motion.button>
+            )}
+          </div>
+
+          <AnimatePresence>
+            {inputValue && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="overflow-hidden"
+              >
+                <div className="border-t border-border/50 px-3.5 pb-2.5 pt-2">
+                  <input
+                    type="text"
+                    placeholder="Add a note…"
+                    value={descValue}
+                    onChange={e => setDescValue(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') handleAdd(e);
+                      if (e.key === 'Escape') { setInputValue(''); setDescValue(''); }
+                    }}
+                    className="w-full bg-transparent text-xs text-muted-foreground placeholder:text-muted-foreground/40 outline-none"
+                  />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </form>
 
