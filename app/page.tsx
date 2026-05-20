@@ -106,6 +106,10 @@ export default function PulsePage() {
     }
   };
 
+  const reorderTasks = useCallback((reordered: Task[]) => {
+    setTasks(reordered);
+  }, []);
+
   // Show nothing while auth hydrates
   if (isLoading || (!token && !isLoading)) return null;
 
@@ -125,9 +129,9 @@ export default function PulsePage() {
       <Navbar progress={progress} />
 
       <main className="flex flex-1 overflow-hidden">
-        <div className="mx-auto flex w-full max-w-screen-xl flex-1 overflow-hidden">
-          {/* Left panel — 40% */}
-          <section className="flex w-full flex-shrink-0 flex-col overflow-hidden border-r border-border/60 p-6 md:w-2/5">
+        <div className="mx-auto flex w-full max-w-screen-xl flex-1 flex-col overflow-hidden md:flex-row">
+          {/* Routines — top half on mobile, left 40% on desktop */}
+          <section className="flex flex-1 flex-col overflow-hidden border-b border-border/60 p-4 md:flex-none md:w-2/5 md:border-b-0 md:border-r md:p-6">
             <RoutinePanel
               routines={routines}
               onToggle={toggleRoutine}
@@ -135,12 +139,13 @@ export default function PulsePage() {
             />
           </section>
 
-          {/* Right panel — 60% */}
-          <section className="flex flex-1 flex-col overflow-hidden p-6">
+          {/* Tasks — bottom half on mobile, right 60% on desktop */}
+          <section className="flex flex-1 flex-col overflow-hidden p-4 md:p-6">
             <TaskPanel
               tasks={tasks}
               onToggle={toggleTask}
               onAdd={addTask}
+              onReorder={reorderTasks}
             />
           </section>
         </div>

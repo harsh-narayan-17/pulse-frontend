@@ -18,7 +18,6 @@ const PRIORITY_COLORS: Record<Priority, string> = {
 export function TaskItemCard({ task, onToggle }: TaskItemProps) {
   return (
     <motion.div
-      layout
       initial={{ opacity: 0, x: -4 }}
       animate={{ opacity: task.completed ? 0.45 : 1, x: 0 }}
       exit={{ opacity: 0, x: 4, transition: { duration: 0.15 } }}

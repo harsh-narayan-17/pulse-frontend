@@ -21,4 +21,5 @@ export interface Task {
   priority: Priority;
   time?: string;
   completed: boolean;
+  order: number;
 }

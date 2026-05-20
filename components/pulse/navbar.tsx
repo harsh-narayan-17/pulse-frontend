@@ -29,7 +29,7 @@ export function Navbar({ progress }: NavbarProps) {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/80 backdrop-blur-md">
-      <div className="mx-auto flex h-14 max-w-screen-xl items-center justify-between px-6">
+      <div className="mx-auto flex h-14 max-w-screen-xl items-center justify-between px-4 sm:px-6">
         {/* Logo */}
         <div className="flex items-center gap-3">
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-foreground">
@@ -42,8 +42,8 @@ export function Navbar({ progress }: NavbarProps) {
 
         {/* Center: Progress */}
         <div className="flex items-center gap-3">
-          <div className="hidden sm:flex items-center gap-2">
-            <div className="relative h-1.5 w-32 overflow-hidden rounded-full bg-muted">
+          <div className="flex items-center gap-2">
+            <div className="relative h-1.5 w-20 overflow-hidden rounded-full bg-muted sm:w-32">
               <div
                 className="absolute left-0 top-0 h-full rounded-full bg-foreground transition-all duration-700 ease-out"
                 style={{ width: `${progress}%` }}

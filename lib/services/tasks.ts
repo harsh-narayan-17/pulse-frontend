@@ -10,6 +10,7 @@ function mapApiTask(t: any): Task {
     bucket: t.bucket as Bucket,
     priority: 'medium', // backend doesn't store priority; default for display
     completed: t.completed,
+    order: t.order ?? 0,
   };
 }
 
@@ -33,6 +34,9 @@ export const taskService = {
 
   move: (id: string, bucket: Bucket) =>
     api.patch(`/api/tasks/${id}`, { bucket }),
+
+  reorder: (id: string, order: number) =>
+    api.patch(`/api/tasks/${id}`, { order }),
 
   remove: (id: string) => api.delete(`/api/tasks/${id}`),
 };

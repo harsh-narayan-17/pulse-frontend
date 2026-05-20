@@ -1,15 +1,32 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { SquareCheck as CheckSquare2, Plus } from 'lucide-react';
+import { SquareCheck as CheckSquare2, Plus, GripVertical } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Task, Bucket, Priority } from '@/lib/types';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+  arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { Task, Bucket } from '@/lib/types';
 import { TaskItemCard } from './task-item';
+import { taskService } from '@/lib/services/tasks';
 
 interface TaskPanelProps {
   tasks: Task[];
   onToggle: (id: string) => void;
   onAdd: (task: Omit<Task, 'id' | 'completed'>) => void;
+  onReorder: (tasks: Task[]) => void;
 }
 
 const BUCKETS: { value: Bucket; label: string }[] = [
@@ -18,7 +35,37 @@ const BUCKETS: { value: Bucket; label: string }[] = [
   { value: 'someday', label: 'Someday' },
 ];
 
-export function TaskPanel({ tasks, onToggle, onAdd }: TaskPanelProps) {
+// Wraps each draggable task with dnd-kit's useSortable
+function SortableTaskItem({
+  task,
+  onToggle,
+}: {
+  task: Task;
+  onToggle: (id: string) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: task.id });
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={`group/drag relative ${isDragging ? 'z-10 opacity-50' : ''}`}
+    >
+      {/* Grip handle — appears on hover, initiates drag */}
+      <div
+        {...attributes}
+        {...listeners}
+        className="absolute left-0 top-1/2 -translate-y-1/2 cursor-grab touch-none opacity-0 group-hover/drag:opacity-100 active:cursor-grabbing"
+      >
+        <GripVertical className="h-3.5 w-3.5 text-muted-foreground/30" />
+      </div>
+      <TaskItemCard task={task} onToggle={onToggle} />
+    </div>
+  );
+}
+
+export function TaskPanel({ tasks, onToggle, onAdd, onReorder }: TaskPanelProps) {
   const [activeBucket, setActiveBucket] = useState<Bucket>('today');
   const [inputValue, setInputValue] = useState('');
   const [descValue, setDescValue] = useState('');
@@ -28,11 +75,42 @@ export function TaskPanel({ tasks, onToggle, onAdd }: TaskPanelProps) {
   const pending = filtered.filter(t => !t.completed);
   const completed = filtered.filter(t => t.completed);
 
+  // Require 8px of movement before drag starts so checkbox clicks are unaffected
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  );
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = pending.findIndex(t => t.id === active.id);
+    const newIndex = pending.findIndex(t => t.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    // Assign clean spaced orders after reorder so future drags always have room
+    const reordered = arrayMove(pending, oldIndex, newIndex).map((t, i) => ({
+      ...t,
+      order: (i + 1) * 1000,
+    }));
+
+    // Reconstruct the full task list with the reordered bucket pending tasks
+    const rest = tasks.filter(t => !(t.bucket === activeBucket && !t.completed));
+    onReorder([...rest, ...reordered]);
+
+    // Persist all new orders — fire and forget; UI is already updated optimistically
+    try {
+      await Promise.allSettled(reordered.map(t => taskService.reorder(t.id, t.order)));
+    } catch {
+      // Silent — order will re-sync on next page load
+    }
+  };
+
   const handleAdd = (e: React.FormEvent | React.KeyboardEvent) => {
     e.preventDefault();
     const title = inputValue.trim();
     if (!title) return;
-    onAdd({ title, description: descValue.trim(), bucket: activeBucket, priority: 'medium' });
+    onAdd({ title, description: descValue.trim(), bucket: activeBucket, priority: 'medium', order: 0 });
     setInputValue('');
     setDescValue('');
     inputRef.current?.focus();
@@ -46,9 +124,7 @@ export function TaskPanel({ tasks, onToggle, onAdd }: TaskPanelProps) {
           <CheckSquare2 className="h-4 w-4 text-muted-foreground" />
           <h2 className="text-sm font-semibold tracking-tight text-foreground">Tasks</h2>
         </div>
-        <span className="text-xs text-muted-foreground">
-          {pending.length} remaining
-        </span>
+        <span className="text-xs text-muted-foreground">{pending.length} remaining</span>
       </div>
 
       {/* Bucket tabs */}
@@ -141,36 +217,47 @@ export function TaskPanel({ tasks, onToggle, onAdd }: TaskPanelProps) {
 
       {/* Task list */}
       <div className="flex-1 overflow-y-auto scrollbar-hide -mx-1 px-1">
-        <AnimatePresence mode="popLayout">
-          {filtered.length === 0 ? (
-            <BucketEmptyState bucket={activeBucket} />
-          ) : (
-            <>
-              {pending.map(task => (
-                <TaskItemCard key={task.id} task={task} onToggle={onToggle} />
-              ))}
+        {filtered.length === 0 ? (
+          <BucketEmptyState bucket={activeBucket} />
+        ) : (
+          <>
+            {/* Draggable pending tasks */}
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={pending.map(t => t.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <AnimatePresence>
+                  {pending.map(task => (
+                    <SortableTaskItem key={task.id} task={task} onToggle={onToggle} />
+                  ))}
+                </AnimatePresence>
+              </SortableContext>
+            </DndContext>
 
-              {completed.length > 0 && pending.length > 0 && (
-                <motion.div
-                  key="divider"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="my-2 flex items-center gap-2"
-                >
-                  <div className="h-px flex-1 bg-border/60" />
-                  <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/50">
-                    Completed
-                  </span>
-                  <div className="h-px flex-1 bg-border/60" />
-                </motion.div>
-              )}
+            {/* Divider */}
+            {completed.length > 0 && pending.length > 0 && (
+              <div className="my-2 flex items-center gap-2">
+                <div className="h-px flex-1 bg-border/60" />
+                <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/50">
+                  Completed
+                </span>
+                <div className="h-px flex-1 bg-border/60" />
+              </div>
+            )}
 
+            {/* Non-draggable completed tasks */}
+            <AnimatePresence>
               {completed.map(task => (
                 <TaskItemCard key={task.id} task={task} onToggle={onToggle} />
               ))}
-            </>
-          )}
-        </AnimatePresence>
+            </AnimatePresence>
+          </>
+        )}
       </div>
     </div>
   );
